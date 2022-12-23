@@ -1,0 +1,134 @@
+const { request, response } = require("express");
+const pool = require("../db/connection");
+const {modelticket, updateticket} = require("../models/ticket");
+const getTicket = async (req = request, res = response) => {
+ let conn;
+
+ try {
+    conn = await pool.getConnection()
+
+    const ticket = await conn.query(modeloticket.queryGetTicket, (error) => {throw new Error(error)})
+
+    if (!ticket) {
+        res.status(404).json({msg: "no se encontraron registros"})
+        return
+    }
+    res.json({ticket})
+ } catch (error) {
+    console.log(error)
+    res.status(500).json({error})
+ } finally{
+    if (conn) {
+        conn.end()
+    }
+ }
+}
+const GetTicketById = async (req = request, res = response) => {
+   const {id} = req.params
+   let conn;
+  
+   try {
+      conn = await pool.getConnection()
+  
+      const [ticket] = await conn.query(modeloticket.queryGetTicketById,[id], (error) => {throw new Error(error)})
+  
+      if (!ticket) {
+          res.status(404).json({msg: `no se encontro registro con el ID ${id}`})
+          return
+      }
+      res.json({ticket})
+   } catch (error) {
+      console.log(error)
+      res.status(500).json({error})
+   } finally{
+      if (conn) {
+          conn.end()
+      }
+   }
+  }
+  const deleteticketByID = async (req = request, res = response) => {
+   const {id} = req.params
+   let conn;
+  
+   try {
+      conn = await pool.getConnection()
+      const {affectedRows} = await conn.query( modeloticket.queryDeletedticket,[id], (error) => {throw new Error(error)})
+  
+      if (affectedRows=== 0) {
+          res.status(404).json({msg: `No se pudo eliminar el ticket con el registro con el ID ${id}`})
+          return
+      }
+      res.json({msg: `El usario con ID ${id} se elimino correctamente`})
+   } catch (error) {
+      console.log(error)
+      res.status(500).json({error})
+   } finally{
+      if (conn) {
+          conn.end()
+      }
+   }
+  }  
+  const addticket = async (req = request, res = response) => {
+   const {
+      fecha,
+      ID,
+      especificaciones,
+      personalasignado,
+      tipodefalla,
+      responsable,
+      Activo
+   } = req.body
+   if(      
+   !ID||
+   !fecha||
+   !especificaciones||
+   !personalasignado||
+   !tipodefalla||
+   !responsable||
+   !Activo
+   ){
+      res.status(400).json({msg: "Falta informacion del ticket"})
+      return
+   }
+   let conn;
+  
+   try {
+      conn = await pool.getConnection()
+
+      const ticket = await conn.query(modeloticket.queryticketexist,[ticket])
+
+      if(!ticket){
+         res.status(403).json({msg: `El ticket ${ticket} ya se encuentra registrado`})
+         return
+      }
+
+      
+      const affectedRows = await conn.query(modeloticket.queryaddticket[
+         ID,
+         fecha,
+         especificaciones,
+         personalasignado,
+         tipodefalla,
+         responsable,
+         Activo
+      
+      ] , (error) => {throw new Error(error)})
+      
+
+      if (affectedRows === 0) {
+         res.status(404).json({msg: `no se pudo agregar el registro del ticket ${ticket}`})
+         return
+   }
+      res.json({msg: `el ticket ${ticket} se agrego correctamente :D`})
+      return
+   } catch (error) {
+      console.log(error)
+      res.status(500).json({error})
+   } finally{
+      if (conn) {
+          conn.end()
+      }
+   }
+  }
+
+module.exports = {getTicket,addticket,GetTicketById,deleteticketByID,}
